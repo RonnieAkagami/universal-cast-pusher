@@ -94,10 +94,9 @@ st.markdown("""
 # --- Sidebar ---
 st.sidebar.title("⚡ Control Panel")
 
-mongo_uri_input = st.sidebar.text_input("MongoDB Connection URI", value=config.MONGO_URI, type="password", help="Enter MongoDB connection string.")
 org_id_input = st.sidebar.text_input("Target Organization ID (orgId)", value=config.DEFAULT_ORG_ID, help="Enter the target orgId.")
 
-conn_ok, conn_msg = verify_mongo_connection(mongo_uri_input)
+conn_ok, conn_msg = verify_mongo_connection(config.MONGO_URI)
 if conn_ok:
     st.sidebar.markdown('<div class="badge-card badge-success">🟢 MongoDB Connected</div>', unsafe_allow_html=True)
 else:
@@ -123,7 +122,7 @@ if uploaded_file is not None:
     headers, rows = parse_excel_file(uploaded_file)
     style_ids = [r["style_id"] for r in rows]
     issues = precheck_excel_data(headers, rows)
-    matched_count, total_org_docs = count_matching_db_docs(mongo_uri_input, org_id_input, style_ids)
+    matched_count, total_org_docs = count_matching_db_docs(config.MONGO_URI, org_id_input, style_ids)
     
     tab1, tab2, tab3 = st.tabs(["📊 1. Analysis & Pre-Check", "🚀 2. Execute Automated Push", "🔍 3. DB Inspector"])
     
@@ -178,7 +177,7 @@ if uploaded_file is not None:
                 
             with st.spinner("Processing Excel and pushing attributes to MongoDB..."):
                 processed, matched, cleaned_reports, fixed_rates = execute_cast_push(
-                    uploaded_file, org_id_input, mongo_uri_input, log_callback, progress_bar.progress
+                    uploaded_file, org_id_input, config.MONGO_URI, log_callback, progress_bar.progress
                 )
                 
             st.balloons()
@@ -193,7 +192,7 @@ if uploaded_file is not None:
     with tab3:
         st.markdown("### 🔍 Live MongoDB Document Inspector")
         if st.button("🔄 Fetch Matching Documents from Database"):
-            client = MongoClient(mongo_uri_input)
+            client = MongoClient(config.MONGO_URI)
             collection = client[config.DB_NAME][config.COLLECTION_NAME]
             
             sku_criteria = []
@@ -227,5 +226,6 @@ if uploaded_file is not None:
                 st.warning("No documents found in DB for the specified orgId and SKUs.")
 else:
     st.info("👆 Upload a CAST audit Excel file above to begin the automated import process.")
+
 
 
