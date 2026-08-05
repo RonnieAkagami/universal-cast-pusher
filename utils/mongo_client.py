@@ -99,7 +99,7 @@ def execute_cast_push(uploaded_file, org_id, mongo_uri, log_callback, progress_c
                 "hint": "",
                 "meta": {
                     "reason": {"value": reason_val if reason_val is not None else "", "type": "string"},
-                    "indicates": {"value": "good" if str_val.lower() == "passed" else "bad", "type": "string"}
+                    "indicates": {"value": "good" if str_val.lower() in ["passed", "pass"] else "bad", "type": "string"}
                 },
                 "tags": ["intelcopilot", "myntraqc", "catalogueEdit"]
             }
@@ -116,12 +116,27 @@ def execute_cast_push(uploaded_file, org_id, mongo_uri, log_callback, progress_c
             
     log_callback("✅ Base CAST attributes `$set` complete!")
     
-    # Automated Post-Import Cleaning
+    # Automated Post-Import Cleaning scoped to the uploaded batch
     log_callback("🧹 Executing Automated Post-Import Quality Cleaning...")
-    docs_with_reports = list(collection.find({
+    
+    sku_list = [r["style_id"] for r in rows]
+    all_sku_criteria = []
+    for s in sku_list:
+        all_sku_criteria.append(s)
+        try:
+            all_sku_criteria.append(int(s))
+        except ValueError:
+            pass
+            
+    cleaning_query = {
         "orgId": org_id,
+        SKU_FIELD: {"$in": all_sku_criteria}
+    }
+    
+    docs_with_reports = collection.find({
+        **cleaning_query,
         "attributes.failureReport.value": {"$exists": True, "$ne": ""}
-    }))
+    })
     
     cleaned_reports = 0
     for doc in docs_with_reports:
@@ -139,19 +154,24 @@ def execute_cast_push(uploaded_file, org_id, mongo_uri, log_callback, progress_c
             
     log_callback(f"  ✨ Sanitized {cleaned_reports} failure report strings.")
     
-    docs_with_rates = list(collection.find({
-        "orgId": org_id,
+    docs_with_rates = collection.find({
+        **cleaning_query,
         "attributes.failureRate.value": {"$exists": True}
-    }))
+    })
     
     fixed_rates = 0
     for doc in docs_with_rates:
         rate = doc.get("attributes", {}).get("failureRate", {}).get("value")
-        if isinstance(rate, (float, int)) and 0 < rate < 1:
-            collection.update_one({"_id": doc["_id"]}, {"$set": {"attributes.failureRate.value": round(rate * 100)}})
-            fixed_rates += 1
+        try:
+            num_rate = float(rate)
+            if 0 < num_rate < 1:
+                collection.update_one({"_id": doc["_id"]}, {"$set": {"attributes.failureRate.value": round(num_rate * 100)}})
+                fixed_rates += 1
+        except (ValueError, TypeError):
+            pass
             
     log_callback(f"  ✨ Converted {fixed_rates} decimal failure rates to whole percentages.")
     log_callback("🎉 Universal Pushing & Quality Cleaning Completed Successfully!")
     
     return processed, matched, cleaned_reports, fixed_rates
+

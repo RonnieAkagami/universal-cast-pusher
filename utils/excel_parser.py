@@ -17,6 +17,8 @@ def is_reason_header(header):
     return h.endswith("reason") or h.endswith("fail reason") or h.endswith("mismatch reason")
 
 def parse_excel_file(uploaded_file):
+    if hasattr(uploaded_file, "seek"):
+        uploaded_file.seek(0)
     workbook = openpyxl.load_workbook(uploaded_file, data_only=True)
     sheet = workbook.worksheets[0]
     
@@ -24,6 +26,8 @@ def parse_excel_file(uploaded_file):
     rows = []
     
     for row_idx, row_cells in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+        if not row_cells:
+            continue
         style_id = str(row_cells[0]).strip() if row_cells[0] is not None else ""
         if style_id and style_id != "None":
             rows.append({
@@ -66,9 +70,14 @@ def precheck_excel_data(headers, rows):
                 
         if failure_rate_idx >= 0 and len(cells) > failure_rate_idx:
             rate = cells[failure_rate_idx]
-            if isinstance(rate, (float, int)) and 0 < rate < 1:
-                issues["decimal_rates"].append({
-                    "row": row_num, "sku": style_id, "rate": rate
-                })
+            try:
+                num_rate = float(rate)
+                if 0 < num_rate < 1:
+                    issues["decimal_rates"].append({
+                        "row": row_num, "sku": style_id, "rate": num_rate
+                    })
+            except (ValueError, TypeError):
+                pass
                 
     return issues
+

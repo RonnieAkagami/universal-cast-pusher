@@ -157,6 +157,8 @@ if uploaded_file is not None:
                 st.info("✅ All failure reports are multi-line formatted.")
                 
         with st.expander("👁️ Preview Uploaded Data Table (First 10 Rows)", expanded=False):
+            if hasattr(uploaded_file, "seek"):
+                uploaded_file.seek(0)
             df_preview = pd.read_excel(uploaded_file)
             st.dataframe(df_preview.head(10), use_container_width=True)
             
@@ -210,17 +212,18 @@ if uploaded_file is not None:
             
             if docs:
                 st.success(f"Found {len(docs)} sample document(s) in MongoDB:")
-                selected_sku = st.selectbox("Select SKU to inspect attributes:", [str(d.get("attributes", {}).get("sku", {}).get("value")) for d in docs])
+                sku_labels = [str(d.get("attributes", {}).get("sku", {}).get("value") or d["_id"]) for d in docs]
+                selected_sku = st.selectbox("Select SKU to inspect attributes:", sku_labels)
                 
-                selected_doc = next((d for d in docs if str(d.get("attributes", {}).get("sku", {}).get("value")) == selected_sku), None)
+                selected_doc = next((d for d, label in zip(docs, sku_labels) if label == selected_sku), None)
                 if selected_doc:
                     st.write(f"**Document ID**: `{selected_doc['_id']}`")
                     st.write(f"**Title**: {selected_doc.get('attributes', {}).get('title', {}).get('value', 'N/A')}")
                     st.write(f"**Total Attribute Keys**: {len(selected_doc.get('attributes', {}))}")
                     with st.expander("📄 View Full JSON `attributes` Object", expanded=True):
-                        selected_doc["_id"] = str(selected_doc["_id"])
                         st.json(selected_doc.get("attributes", {}))
             else:
                 st.warning("No documents found in DB for the specified orgId and SKUs.")
 else:
     st.info("👆 Upload a CAST audit Excel file above to begin the automated import process.")
+
