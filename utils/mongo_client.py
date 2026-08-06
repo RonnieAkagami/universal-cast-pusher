@@ -12,6 +12,8 @@ def get_mongo_client(uri):
     return _client_cache[uri]
 
 def verify_mongo_connection(uri):
+    if not uri:
+        return False, "MONGO_URI is missing or empty in .env / secrets"
     try:
         client = get_mongo_client(uri)
         client.admin.command('ping')
