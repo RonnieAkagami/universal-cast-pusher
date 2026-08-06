@@ -5,9 +5,24 @@ try:
 except ImportError:
     pass
 
+# Lightweight fallback to parse .env if python-dotenv is missing
+env_path = os.path.join(os.path.dirname(__file__), ".env")
+if os.path.exists(env_path):
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    if k and k not in os.environ:
+                        os.environ[k] = v.strip().strip("'\"")
+    except Exception:
+        pass
+
 import streamlit as st
 
-DEFAULT_MONGO_URI = "mongodb://prod_roshan:Eo4GCF14g7HHNJGeK6QFg1GlDEfYtbuO9S4tOoP3g99f4mZRGc@13.126.165.228:57018/omsProd?authSource=admin&directConnection=true"
+DEFAULT_MONGO_URI = ""
 
 def get_secret(key, default=""):
     val = os.getenv(key)
