@@ -2,12 +2,6 @@ import os
 import streamlit as st
 
 def _load_env():
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-    except ImportError:
-        pass
-
     env_path = os.path.join(os.path.dirname(__file__), ".env")
     if os.path.exists(env_path):
         try:
@@ -17,19 +11,26 @@ def _load_env():
                     if line and not line.startswith("#") and "=" in line:
                         k, v = line.split("=", 1)
                         k = k.strip()
-                        if k and k not in os.environ:
-                            os.environ[k] = v.strip().strip("'\"")
+                        val_str = v.strip().strip("'\"")
+                        if k and val_str and (k not in os.environ or not os.environ[k].strip()):
+                            os.environ[k] = val_str
         except Exception:
             pass
+
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(dotenv_path=env_path, override=True)
+    except ImportError:
+        pass
 
 def get_secret(key, default=""):
     _load_env()
     val = os.getenv(key)
-    if val:
-        return val
+    if val and val.strip():
+        return val.strip()
     try:
-        if hasattr(st, "secrets") and key in st.secrets:
-            return st.secrets[key]
+        if hasattr(st, "secrets") and key in st.secrets and st.secrets[key]:
+            return str(st.secrets[key]).strip()
     except Exception:
         pass
     return default
