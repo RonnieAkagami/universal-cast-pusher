@@ -25,7 +25,6 @@ universal-cast-pusher/
 │   ├── __init__.py
 │   ├── excel_parser.py      # Excel file parsing & pre-check routines
 │   └── mongo_client.py      # MongoDB connections, $set updates & auto-cleaning
-├── .env.example              # Environment variables template
 ├── .gitignore                # Git exclusions
 ├── Dockerfile                # Docker container build configuration
 ├── README.md                 # Project documentation
@@ -50,10 +49,7 @@ universal-cast-pusher/
    ```
 
 3. **Configure Environment (Optional)**:
-   Create a `.env` file or environment variables:
-   ```bash
-   cp .env.example .env
-   ```
+   Create a `.env` file with your environment variables (e.g. `MONGO_URI=...`).
 
 4. **Launch Application**:
    ```bash
