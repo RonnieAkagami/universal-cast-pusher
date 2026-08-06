@@ -27,7 +27,7 @@ COLLECTION_NAME = get_secret("COLLECTION_NAME", "tasks")
 SKU_FIELD = get_secret("SKU_FIELD", "attributes.sku.value")
 
 # Default UI Settings
-DEFAULT_ORG_ID = get_secret("DEFAULT_ORG_ID", "org_Py834CU7ZEVygUiD")
-APP_TITLE = "Universal CAST Data Pusher"
+DEFAULT_ORG_ID = get_secret("DEFAULT_ORG_ID", "Your ORG ID")
+APP_TITLE = "Rubick CAST Automated Data Migrator"
 APP_SUBTITLE = "Automated Excel-to-MongoDB pipeline with non-destructive attribute appending & data quality cleaning."
 
