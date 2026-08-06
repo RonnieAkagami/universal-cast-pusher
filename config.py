@@ -29,8 +29,9 @@ def get_secret(key, default=""):
     if val and val.strip():
         return val.strip()
     try:
-        if hasattr(st, "secrets") and key in st.secrets and st.secrets[key]:
-            return str(st.secrets[key]).strip()
+        val_sec = st.secrets.get(key)
+        if val_sec and str(val_sec).strip():
+            return str(val_sec).strip()
     except Exception:
         pass
     return default
